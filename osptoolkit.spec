@@ -12,7 +12,6 @@ Source0:	http://www.transnexus.com/OSP%20Toolkit/Toolkits%20for%20Download/OSPTo
 Patch0:		TK-3_3_1-20041213_B-asterisk.diff
 Patch1:		TK-3_3_3-20051103_B-shared.diff
 BuildRequires:	openssl-devel
-BuildRoot:	%{_tmppath}/%{name}-%{version}-root
 
 %description
 The OSP Toolkit is a complete development kit for software
