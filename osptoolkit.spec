@@ -106,9 +106,13 @@ install -m0644 include/osp/*.h %{buildroot}%{_includedir}/osp/
 install -m0755 test/test_app %{buildroot}%{_bindir}/osp-test_app
 install -m0755 enroll/enroll %{buildroot}%{_bindir}/
 
+%if %mdkversion < 200900
 %post -n %{libname} -p /sbin/ldconfig
+%endif
 
+%if %mdkversion < 200900
 %postun -n %{libname} -p /sbin/ldconfig
+%endif
 
 %clean
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
