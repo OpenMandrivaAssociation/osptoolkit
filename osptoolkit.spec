@@ -1,110 +1,98 @@
-%define	major 0
-%define libname	%mklibname osptk %{major}
+%define	major 3
+%define libname %mklibname osptk %{major}
+%define develname %mklibname osptk -d
 
 Summary:	The OSP Toolkit(tm)
 Name:		osptoolkit
-Version:	3.3.6
-Release:	%mkrel 3
+Version:	3.4.2
+Release:	%mkrel 1
 License:	BSD-like
 Group:		System/Libraries
-URL:		http://www.transnexus.com/
-Source0:	http://www.transnexus.com/OSP%20Toolkit/Toolkits%20for%20Download/OSPToolkit-%{version}.tar.bz2
-Patch0:		TK-3_3_1-20041213_B-asterisk.diff
-Patch1:		TK-3_3_3-20051103_B-shared.diff
+URL:		http://sourceforge.net/projects/osp-toolkit
+Source0:	http://dfn.dl.sourceforge.net/sourceforge/osp-toolkit/osptoolkit_%{version}.orig.tar.gz
+Patch0:		osptoolkit_3.4.2-1.diff
+Patch1:		osptoolkit-ldflags.diff
 BuildRequires:	openssl-devel
-BuildRoot:	%{_tmppath}/%{name}-%{version}-root
+BuildRequires:	libtool
+BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-buildroot
 
 %description
-The OSP Toolkit is a complete development kit for software
-developers who want to implement the client side of the European
-Telecommunication Standards Institute's (ETSI) Open Settlement
-Protocol.  The OSP Toolkit includes source code written in ANSI C,
-test tools and extensive documentation on how to implement OSP. 
-A hosted OSP test server is freely available on the Internet for
+The OSP Toolkit is a complete development kit for software developers who want
+to implement the client side of the European Telecommunication Standards
+Institute's (ETSI) Open Settlement Protocol. The OSP Toolkit includes source
+code written in ANSI C, test tools and extensive documentation on how to
+implement OSP. A hosted OSP test server is freely available on the Internet for
 all developers to test their OSP implementation.   
 
 %package -n	%{libname}
 Summary:	The OSP Toolkit(tm) shared library
 Group:          System/Libraries
-Obsoletes:	%{mklibname osp 0}
 
 %description -n	%{libname}
-The OSP Toolkit is a complete development kit for software
-developers who want to implement the client side of the European
-Telecommunication Standards Institute's (ETSI) Open Settlement
-Protocol.  The OSP Toolkit includes source code written in ANSI C,
-test tools and extensive documentation on how to implement OSP. 
-A hosted OSP test server is freely available on the Internet for
+The OSP Toolkit is a complete development kit for software developers who want
+to implement the client side of the European Telecommunication Standards
+Institute's (ETSI) Open Settlement Protocol. The OSP Toolkit includes source
+code written in ANSI C, test tools and extensive documentation on how to
+implement OSP. A hosted OSP test server is freely available on the Internet for
 all developers to test their OSP implementation.   
 
-%package -n	%{libname}-devel
+%package -n	%{develname}
 Summary:	Static library and header files for the libosp library
 Group:		Development/C
-Obsoletes:	libosp-devel osp-devel osptk-devel
+Requires:	%{libname} = %{version}
 Provides:	libosp-devel = %{version}
 Provides:	osp-devel = %{version}
 Provides:	osptk-devel = %{version}
-Requires:	%{libname} = %{version}
-Obsoletes:	%{mklibname osp 0}-devel
+Obsoletes:	%{mklibname osp 0 -d}
+Obsoletes:	%{mklibname osptk 0 -d}
 
-%description -n	%{libname}-devel
-The OSP Toolkit is a complete development kit for software
-developers who want to implement the client side of the European
-Telecommunication Standards Institute's (ETSI) Open Settlement
-Protocol.  The OSP Toolkit includes source code written in ANSI C,
-test tools and extensive documentation on how to implement OSP. 
-A hosted OSP test server is freely available on the Internet for
+%description -n	%{develname}
+The OSP Toolkit is a complete development kit for software developers who want
+to implement the client side of the European Telecommunication Standards
+Institute's (ETSI) Open Settlement Protocol. The OSP Toolkit includes source
+code written in ANSI C, test tools and extensive documentation on how to
+implement OSP. A hosted OSP test server is freely available on the Internet for
 all developers to test their OSP implementation.   
 
-This package contains the static libosp library and its header
-files.
+This package contains the static libosp library and its header files.
 
 %package -n	osp-tools
-Summary:	Various utilities for the libosp library
+Summary:	Various utilities for the libosptk library
 Group:		System/Servers
 
 %description -n	osp-tools
-The OSP Toolkit is a complete development kit for software
-developers who want to implement the client side of the European
-Telecommunication Standards Institute's (ETSI) Open Settlement
-Protocol.  The OSP Toolkit includes source code written in ANSI C,
-test tools and extensive documentation on how to implement OSP. 
-A hosted OSP test server is freely available on the Internet for
-all developers to test their OSP implementation.   
-
-This package contains various utilities utilizing the libosp
-library.
+This package contains various utilities utilizing the libosptk library.
 
 %prep
 
-%setup -q -n TK-3_3_6-20060303
-%patch0 -p0 -b .asterisk
-%patch1 -p1 -b .shared
+%setup -q -n TK-3_4_2-20071227
+%patch0 -p1
+%patch1 -p0
+
 
 # lib64 fix
 find -name "Makefile" | xargs perl -pi -e "s|/usr/lib|%{_libdir}|g"
+find -name "Makefile" | xargs perl -pi -e "s|/lib\b|/%{_lib}|g"
 
 %build
 
-%make RPM_OPT_FLAGS="%{optflags} -pthread" -C src
-%make RPM_OPT_FLAGS="%{optflags} -pthread" -C enroll
-%make RPM_OPT_FLAGS="%{optflags} -pthread" -C test
+%make build VERSION="%{version}" MAJOR="%{major}" ADDFLAGS="%{optflags}"
+%make enroll VERSION="%{version}" MAJOR="%{major}" ADDFLAGS="%{optflags}"
+%make test VERSION="%{version}" MAJOR="%{major}" ADDFLAGS="%{optflags}"
 
 %install
-[ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
+rm -rf %{buildroot}
 
 install -d %{buildroot}%{_bindir}
-install -d %{buildroot}%{_libdir}
+install -d %{buildroot}%{_libdir}/pkgconfig
 install -d %{buildroot}%{_includedir}/osp
 
-install -m0755 src/libosptk.so.%{major} %{buildroot}%{_libdir}/
-ln -s libosptk.so.%{major} %{buildroot}%{_libdir}/libosptk.so
+libtool --mode=install install -m0755 lib/libosptk.la %{buildroot}%{_libdir}/libosptk.la
+libtool --mode=install install -m0755 bin/test_app %{buildroot}%{_bindir}/osp-test_app
+libtool --mode=install install -m0755 bin/enroll %{buildroot}%{_bindir}/osp-enroll
 
-install -m0644 src/libosptk.a %{buildroot}%{_libdir}/
 install -m0644 include/osp/*.h %{buildroot}%{_includedir}/osp/
-
-install -m0755 test/test_app %{buildroot}%{_bindir}/osp-test_app
-install -m0755 enroll/enroll %{buildroot}%{_bindir}/
+install -m0644 debian/libosptk3.pc %{buildroot}%{_libdir}/pkgconfig/
 
 %if %mdkversion < 200900
 %post -n %{libname} -p /sbin/ldconfig
@@ -115,26 +103,23 @@ install -m0755 enroll/enroll %{buildroot}%{_bindir}/
 %endif
 
 %clean
-[ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
+rm -rf %{buildroot}
 
 %files -n %{libname}
 %defattr(-,root,root)
-%doc LICENSE.txt README.txt RELNOTES.txt
-%{_libdir}/*.so.*
+%doc LICENSE.txt README.txt RELNOTES.txt debian/osptoolkit.txt
+%{_libdir}/lib*.so.%{major}*
 
-%files -n %{libname}-devel
+%files -n %{develname}
 %defattr(-,root,root)
-%doc LICENSE.txt README.txt RELNOTES.txt
 %doc test/nonblocking.[ch]
 %{_includedir}/osp
 %{_libdir}/*.so
-%{_libdir}/*.a
+%{_libdir}/*.*a
+%{_libdir}/pkgconfig/*.pc
 
 %files -n osp-tools
 %defattr(-,root,root)
-%doc LICENSE.txt README.txt RELNOTES.txt
 %doc bin/enroll.sh bin/test.cfg bin/openssl.cnf bin/.rnd
 %{_bindir}/osp-test_app
-%{_bindir}/enroll
-
-
+%{_bindir}/osp-enroll
