@@ -4,14 +4,15 @@
 
 Summary:	The OSP Toolkit(tm)
 Name:		osptoolkit
-Version:	3.4.2
+Version:	3.5.2
 Release:	%mkrel 1
 License:	BSD-like
 Group:		System/Libraries
 URL:		http://sourceforge.net/projects/osp-toolkit
-Source0:	http://dfn.dl.sourceforge.net/sourceforge/osp-toolkit/osptoolkit_%{version}.orig.tar.gz
+Source0:	http://dfn.dl.sourceforge.net/sourceforge/osp-toolkit/OSPToolkit-%{version}.tar.gz
+Source1:	Makefile
 Patch0:		osptoolkit_3.4.2-1.diff
-Patch1:		osptoolkit-ldflags.diff
+Patch1:		TK-3_5_2-20090702-format_not_a_string_literal_and_no_format_arguments.diff
 BuildRequires:	openssl-devel
 BuildRequires:	libtool
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-buildroot
@@ -65,10 +66,11 @@ This package contains various utilities utilizing the libosptk library.
 
 %prep
 
-%setup -q -n TK-3_4_2-20071227
+%setup -q -n TK-3_5_2-20090702
 %patch0 -p1
-%patch1 -p0
+%patch1 -p0 -b .format_not_a_string_literal_and_no_format_arguments
 
+install -m0644 %{SOURCE1} Makefile
 
 # lib64 fix
 find -name "Makefile" | xargs perl -pi -e "s|/usr/lib|%{_libdir}|g"
@@ -76,9 +78,9 @@ find -name "Makefile" | xargs perl -pi -e "s|/lib\b|/%{_lib}|g"
 
 %build
 
-%make build VERSION="%{version}" MAJOR="%{major}" ADDFLAGS="%{optflags}"
-%make enroll VERSION="%{version}" MAJOR="%{major}" ADDFLAGS="%{optflags}"
-%make test VERSION="%{version}" MAJOR="%{major}" ADDFLAGS="%{optflags}"
+%make build VERSION="%{version}" MAJOR="%{major}" ADDFLAGS="%{optflags}" LDFLAGS="%{ldflags}"
+%make enroll VERSION="%{version}" MAJOR="%{major}" ADDFLAGS="%{optflags}" LDFLAGS="%{ldflags}"
+%make test VERSION="%{version}" MAJOR="%{major}" ADDFLAGS="%{optflags}" LDFLAGS="%{ldflags}"
 
 %install
 rm -rf %{buildroot}
