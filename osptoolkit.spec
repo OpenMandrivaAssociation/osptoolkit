@@ -4,8 +4,8 @@
 
 Summary:	The OSP Toolkit(tm)
 Name:		osptoolkit
-Version:	3.5.2
-Release:	%mkrel 2
+Version:	3.6.1
+Release:	%mkrel 1
 License:	BSD-like
 Group:		System/Libraries
 URL:		http://sourceforge.net/projects/osp-toolkit
@@ -66,7 +66,7 @@ This package contains various utilities utilizing the libosptk library.
 
 %prep
 
-%setup -q -n TK-3_5_2-20090702
+%setup -q -n TK-3_6_1-20100107
 %patch0 -p1
 %patch1 -p0 -b .format_not_a_string_literal_and_no_format_arguments
 
