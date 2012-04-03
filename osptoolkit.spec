@@ -1,10 +1,10 @@
-%define	major 3
+%define	major 4
 %define libname %mklibname osptk %{major}
 %define develname %mklibname osptk -d
 
 Summary:	The OSP Toolkit(tm)
 Name:		osptoolkit
-Version:	3.6.1
+Version:	4.0.3
 Release:	%mkrel 1
 License:	BSD-like
 Group:		System/Libraries
@@ -12,7 +12,6 @@ URL:		http://sourceforge.net/projects/osp-toolkit
 Source0:	http://dfn.dl.sourceforge.net/sourceforge/osp-toolkit/OSPToolkit-%{version}.tar.gz
 Source1:	Makefile
 Patch0:		osptoolkit_3.4.2-1.diff
-Patch1:		TK-3_5_2-20090702-format_not_a_string_literal_and_no_format_arguments.diff
 BuildRequires:	openssl-devel
 BuildRequires:	libtool
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-buildroot
@@ -66,9 +65,8 @@ This package contains various utilities utilizing the libosptk library.
 
 %prep
 
-%setup -q -n TK-3_6_1-20100107
+%setup -q -n TK-4_0_3-20120120
 %patch0 -p1
-%patch1 -p0 -b .format_not_a_string_literal_and_no_format_arguments
 
 install -m0644 %{SOURCE1} Makefile
 
@@ -94,15 +92,9 @@ libtool --mode=install install -m0755 bin/test_app %{buildroot}%{_bindir}/osp-te
 libtool --mode=install install -m0755 bin/enroll %{buildroot}%{_bindir}/osp-enroll
 
 install -m0644 include/osp/*.h %{buildroot}%{_includedir}/osp/
-install -m0644 debian/libosptk3.pc %{buildroot}%{_libdir}/pkgconfig/
+install -m0644 debian/libosptk*.pc %{buildroot}%{_libdir}/pkgconfig/libosptk.pc
 
-%if %mdkversion < 200900
-%post -n %{libname} -p /sbin/ldconfig
-%endif
-
-%if %mdkversion < 200900
-%postun -n %{libname} -p /sbin/ldconfig
-%endif
+rm -f %{buildroot}%{_libdir}/*.*a
 
 %clean
 rm -rf %{buildroot}
@@ -117,7 +109,6 @@ rm -rf %{buildroot}
 %doc test/nonblocking.[ch]
 %{_includedir}/osp
 %{_libdir}/*.so
-%{_libdir}/*.*a
 %{_libdir}/pkgconfig/*.pc
 
 %files -n osp-tools
