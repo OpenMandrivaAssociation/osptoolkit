@@ -1,0 +1,866 @@
+--- osptoolkit-3.4.2.orig/bin/enroll.sh	2010-07-07 05:01:27.000000000 +0200
++++ osptoolkit-3.4.2/bin/enroll.sh	2012-04-03 09:02:41.870546456 +0200
+@@ -7,7 +7,9 @@
+ #                                                                  #
+ # This shell script is used to enroll the device with the Server   #
+ ####################################################################
+-OPENSSL_CONF=./openssl.cnf
++ospdir=/usr/lib/osp
++cnfdir=/etc/osp
++OPENSSL_CONF=$cnfdir/openssl.cnf
+ export OPENSSL_CONF
+ RANDFILE=./.rnd
+ export RANDFILE
+@@ -26,7 +28,7 @@
+ exit 127
+ fi
+ 
+-enroll -function getcacert -caurl http://$1:5045/tep > cacert_0.pem
++$ospdir/enroll -function getcacert -caurl http://$1:5045/tep > cacert_0.pem
+ ret_val=$?
+ export ret_val
+ echo "[SP: $1]Error Code returned from getcacert command :" $ret_val
+@@ -35,7 +37,7 @@
+ exit 127
+ fi
+ 
+-enroll -function request -username trans -password nexus -customer 1000 -device 1000 -cacert cacert_0.pem -certreq certreq.pem -sslurl https://$1:1443/tep > localcert.pem
++$ospdir/enroll -function request -username trans -password nexus -customer 1000 -device 1000 -cacert cacert_0.pem -certreq certreq.pem -sslurl https://$1:1443/tep > localcert.pem
+ ret_val=$?
+ export ret_val
+ echo "Error Code returned from localcert command :" $ret_val
+@@ -47,7 +49,7 @@
+ i=1
+ shift
+ while [ $# -ge 1 ]; do
+-enroll -function getcacert -caurl http://$1:5045/tep > cacert_$i.pem
++$ospdir/enroll -function getcacert -caurl http://$1:5045/tep > cacert_$i.pem
+ ret_val=$?
+ export ret_val
+ echo "[SP: $1]Error Code returned from getcacert command :" $ret_val
+--- osptoolkit-3.4.2.orig/debian/compat
++++ osptoolkit-3.4.2/debian/compat
+@@ -0,0 +1 @@
++5
+--- osptoolkit-3.4.2.orig/debian/libosptk3.install
++++ osptoolkit-3.4.2/debian/libosptk3.install
+@@ -0,0 +1 @@
++usr/lib/libosptk.so.*
+--- osptoolkit-3.4.2.orig/debian/rules
++++ osptoolkit-3.4.2/debian/rules
+@@ -0,0 +1,111 @@
++#!/usr/bin/make -f
++# -*- makefile -*-
++# Sample debian/rules that uses debhelper.
++# This file was originally written by Joey Hess and Craig Small.
++# As a special exception, when this file is copied by dh-make into a
++# dh-make output file, you may use that output file without restriction.
++# This special exception was added by Craig Small in version 0.37 of dh-make.
++
++# Uncomment this to turn on verbose mode.
++#export DH_VERBOSE=1
++
++
++
++
++ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
++	addflags = -O0
++else
++	addflags = -O2
++endif
++
++# shared library versions, option 1
++version=3.4.2
++major=3
++# option 2, assuming the library is created as src/.libs/libfoo.so.2.0.5 or so
++#version=`ls src/.libs/lib*.so.* | \
++# awk '{if (match($$0,/[0-9]+\.[0-9]+\.[0-9]+$$/)) print substr($$0,RSTART)}'`
++#major=`ls src/.libs/lib*.so.* | \
++# awk '{if (match($$0,/\.so\.[0-9]+$$/)) print substr($$0,RSTART+4)}'`
++
++configure: configure-stamp
++configure-stamp:
++	dh_testdir
++
++	# Add here commands to configure the package.
++
++	touch configure-stamp
++
++
++build: build-stamp
++build-stamp: configure-stamp 
++	dh_testdir
++
++	# Add here commands to compile the package.
++	$(MAKE) build VERSION="$(version)" MAJOR="$(major)" ADDFLAGS="$(addflags)"
++	$(MAKE) enroll VERSION="$(version)" MAJOR="$(major)" ADDFLAGS="$(addflags)"
++	$(MAKE) test VERSION="$(version)" MAJOR="$(major)" ADDFLAGS="$(addflags)"
++
++	touch $@
++
++clean:
++	dh_testdir
++	dh_testroot
++	rm -f build-stamp configure-stamp
++
++	# Add here commands to clean up after the build process.
++	$(MAKE) VERSION="$(version)" MAJOR="$(major)" clean
++
++	dh_clean 
++
++install: build
++	dh_testdir
++	dh_testroot
++	dh_clean -k 
++	dh_installdirs -A
++
++	# Add here commands to install the package into debian/libosptk
++	$(MAKE) VERSION="$(version)" MAJOR="$(major)" DESTDIR=$(CURDIR)/debian/libosptk$(major) install-lib
++
++	# Add here commands to install the package into debian/libosptk-dev
++	$(MAKE) VERSION="$(version)" MAJOR="$(major)" DESTDIR=$(CURDIR)/debian/libosptk$(major)-dev install-dev
++
++	# Add here commands to install the package into debian/osptoolkit
++	$(MAKE) VERSION="$(version)" MAJOR="$(major)" DESTDIR=$(CURDIR)/debian/osptoolkit install-bin
++
++# Build architecture-independent files here.
++binary-indep: build install
++# We have nothing to do by default.
++
++# Build architecture-dependent files here.
++binary-arch: build install
++	dh_testdir
++	dh_testroot
++	dh_installchangelogs 
++	dh_installdocs
++	dh_installexamples
++#	dh_install
++#	dh_installmenu
++#	dh_installdebconf	
++#	dh_installlogrotate
++#	dh_installemacsen
++#	dh_installpam
++#	dh_installmime
++#	dh_installinit
++#	dh_installcron
++#	dh_installinfo
++	dh_installman
++	dh_link
++	dh_strip --dbg-package=libosptk$(major)-dbg
++	dh_compress
++	dh_fixperms
++#	dh_perl
++#	dh_python
++	dh_makeshlibs
++	dh_installdeb
++	dh_shlibdeps
++	dh_gencontrol
++	dh_md5sums
++	dh_builddeb
++
++binary: binary-indep binary-arch
++.PHONY: build clean binary-indep binary-arch binary install configure
+--- osptoolkit-3.4.2.orig/debian/libosptk3.dirs
++++ osptoolkit-3.4.2/debian/libosptk3.dirs
+@@ -0,0 +1 @@
++usr/lib
+--- osptoolkit-3.4.2.orig/debian/copyright
++++ osptoolkit-3.4.2/debian/copyright
+@@ -0,0 +1,32 @@
++This package was debianized by TransNexus, Inc. <support@transnexus.com> on
++Sun, 30 Dec 2007 20:37:26 -0500.
++
++It was downloaded from https://sourceforge.net/projects/osp-toolkit
++
++Upstream Author: TransNexus, Inc. <support@transnexus.com>
++
++This software is Copyright (C) 2004, TransNexus, Inc.; Atlanta, GA USA
++
++License:
++    Redistribution and use in source and binary forms, with or without
++    modification, are permitted under the terms of the BSD License.
++
++    THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++    ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++    ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++    FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++    DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++    OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++    HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++    LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++    OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++    SUCH DAMAGE.
++
++On Debian systems, the complete text of the BSD License can be 
++found in `/usr/share/common-licenses/BSD'.
++
++
++The Debian packaging is (C) 2007, TransNexus, Inc. <support@transnexus.com> and
++is licensed under the GPL, see `/usr/share/common-licenses/GPL'.
++
+--- osptoolkit-3.4.2.orig/debian/osptoolkit.txt
++++ osptoolkit-3.4.2/debian/osptoolkit.txt
+@@ -0,0 +1,125 @@
++Secure, Multi-lateral Peering With SIP proxies on Debian Etch
++
++E-mail support: https://lists.sourceforge.net/lists/listinfo/osp-toolkit-client
++www.transnexus.com
++Copyright (c) 2003-2007 by TransNexus. All Rights Reserved. 
++TransNexus and OSP Secured are trademarks of TransNexus, Inc.
++
++Contents
++	Introduction
++		Multi-lateral SIP Peering
++		Call Detail Record Collection
++	Install OSP Toolkit Packages
++	Enroll OpenSER OSP Module with a Peering Server
++		Overview
++		Using the enroll script
++
++Introduction
++
++	Secure multi-lateral peering uses Public Key Infrastructure (PKI) services to secure, direct peering among an anonymous group of SIP peers.  In a multi-lateral peering architecture, each peer trusts a common peering authority that enforces routing and access policies on behalf of each peer.  The benefits of multi-lateral peering are increased peering security and the elimination of burdensome bilateral peering agreements and access control lists which are difficult to administer in a large peering network.
++
++	This document provides instructions on how to use the OSP Toolkit packages on Debian Etch. The OSP Toolkit packages for Debian Etch, which are freely available from http://sourceforge.net/projects/osp-toolkit, contain an implementation of the OSP standard defined by the European Telecommunications Standards Institute (ETSI TS 101 321) www.etsi.org.  The OSP Toolkit enables SIP proxies on Debian Etch for secure multi-lateral peering.
++
++Multi-lateral SIP Peering
++
++	A peering server is a simple and efficient solution for managing routing, access control and CDR collection for VoIP calls among a network of SIP proxy (OpenSER, for example) devices.  OSP can be used to securely manage wholesale VoIP peering among independent SIP networks or by an enterprise to create a secure VoIP virtual private network for calling among branch offices using SIP PBXs.  The diagram below illustrates a call scenario between SIP proxy networks using OSP peering.  Each SIP proxy manages calls within its own domain.  However, when a call must be completed outside its own network, an SIP proxy can query a peering server for routing and access information to a destination peer that can complete the call.
++
++1. The calling party makes a call.
++2. The source SIP proxy cannot complete the call within its domain.
++3. Peering Request.  The source SIP proxy queries the peering server for the IP addresses of other peers that can complete the call to the dialed number.
++4. Peering Response.  The peering server returns a list of IP addresses of destination peers and digitally signed peering tokens authorizing access to each destination peer.
++5. The source SIP proxy routes the call to the destination SIP proxy returned by the peering server.  Included in the SIP Invite message is the peering access token signed by the peering server.
++6. The destination SIP proxy receives the call and validates the peering token.  If the token is valid, the destination SIP proxy routes the call to the called telephone number.
++7. The call is completed to calling party.
++
++Call Detail Record Collection
++
++	When the call is over, both the source and destination peers send call detail records to the peering server as shown in steps 8 and 9 below.
++
++Install OSP Toolkit Packages
++
++	The OSP Toolkit is a shared library comprised of OSP client functions that simplify sending and receiving OSP peering messages. It is this library, which will be integrated into the SIP proxy. The OSP Toolkit uses third party software (by default OpenSSL) for cryptographic algorithms and for secure internet transactions (HTTPS). The OSP Toolkit also includes the application enroll which enables the OSP client device to generate its own public-private key pair, get the public key from an OSP peering server, send a certificate request to a peering server and receive the resulting signed certificate from the peering server. 
++
++	There are four OSP Toolkit packages for Debian Etch. The osptoolkit package contains the OSP Toolkit enroll application and a test application. The libosptk-3.4.2 package contains the OSP Toolkit run-time shared library. The libosptk-dev package contains the OSP Toolkit header files and static library. The libosptk-dbg package contains the debug information of the OSP Toolkit shared library and applications.
++
++	In order to successfully install and use the OSP Toolkit, the following list of software is required:
++
++	* OpenSSL (required) - Open Source SSL protocol and Cryptographic Algorithms (version 0.9.8c-1 or higher packages are required).  libssl package is required to run SIP proxies with OSP Toolkit and other OSP Toolkit client applications.  openssl package is required to run the OSP Toolkit enroll application.
++
++	* OSP Server (required for testing) - Two open source OSP server projects are available. OpenOSP, an OSP server written in C code, is located at http://www.vovida.org/applications/downloads/openosp. RAMS, a Java based OSP server, is located at http://sourceforge.net/projects/rams.  Also, a free version of the TransNexus commercial OSP server can be downloaded from www.transnexus.com/OSP%20Toolkit/Peering_Server/VoIP_Peering_Server.htm.
++
++	After downloading the OSP Toolkit packages for Debian Etch, osptoolkit and libosptk-3.4.2, perform the following steps in order:
++
++	* Copy the OSP Toolkit packages into the temporary directory. 
++	* Login as root and execute the following command:
++	dpkg 每i libosptk-3.4.2_###_$$$.deb
++	Where ### is the version number separated by dots and dash and $$$ is the platform type. For example, if the version is 3.4.2-1 and platform type is i386 then the above commands would be:
++	dpkg 每i libosptk-3.4.2_3.4.2-1_i386.deb
++	By default, it will install the OSP Toolkit run-time shared library, libosptk.so, into /usr/lib directory.
++	* Execute the following command:
++	dpkg 每I osptoolkit_###_$$$.deb
++	Where ### is the version number separated by dots and dash and $$$ is the platform type. For example, if the version is 3.4.2-1 and platform type is i386 then the above commands would be:
++	dpkg 每I osptoolkit_3.4.2-1_i386.deb
++	By default, it will install OSP Toolkit enroll and the test applications into /usr/bin directory.
++
++Enroll SIP proxy on Debian Etch with a Peering Server
++
++Overview
++
++	To establish a secure relationship between an OSP peering server and the OSP module in OpenSER requires three crypto files.  These files are:
++
++	* localcert.pem - The local certificate for OpenSER signed by the OSP server.
++	* pkey.pem - The private key generated by the enroll utility for OpenSER.
++	* cacert_#.pem - The Certificate Authority (CA) certificate from an OSP server.  OpenSER may enroll with multiple certificate authorities or peering servers.  The # represents an integer indicating the CA certificate from different peering servers. 
++
++	The enroll utility automates the process of enrolling SIP proxy on Debian Etch with a peering server and creating the three crypto files.
++
++Using the enroll script
++
++	The script ospenroll requires AT&T korn shell (ksh) or any of its compatible variants. The ospenroll script should be run from the /usr/bin directory.
++ 
++	From the command line, type ospenroll followed by the IP address or domain name of the peering server. Below is an example of the enroll utility being used to enroll SIP proxy on Debian Etch with a peering server named osptestserver.transnexus.com. The gray boxes indicate optional input which will be included in the certificate.  Error Code 0 indicates the operation was successful with no error.
++
++Shell > ospenroll osptestserver.transnexus.com
++Generating a 512 bit RSA private key
++............................++++++++++++
++.++++++++++++
++writing new private key to 'pkey.pem'
++-----
++You are about to be asked to enter information that will be incorporated
++into your certificate request.
++What you are about to enter is what is called a Distinguished Name or a DN.
++There are quite a few fields but you can leave some blank
++For some fields there will be a default value,
++If you enter '.', the field will be left blank.
++-----
++Country Name (2 letter code) [AU]: _______
++State or Province Name (full name) [Some-State]: _______
++Locality Name (eg, city) []:_______
++Organization Name (eg, company) [Internet Widgits Pty Ltd]: _______
++Organizational Unit Name (eg, section) []:_______
++Common Name (eg, YOUR name) []:_______
++Email Address []:_______
++?
++Please enter the following 'extra' attributes
++to be sent with your certificate request
++A challenge password []:_______
++An optional company name []:_______
++?
++Error Code returned from openssl command : 0
++?
++CA certificate received
++[SP: osptestserver.transnexus.com]Error Code returned from getcacert command : 0
++?
++output buffer after operation: operation=request
++output buffer after nonce: operation=request&nonce=6096834216798074
++X509 CertInfo context is null pointer
++Unable to get Local Certificate
++depth=0 /CN=osptestserver.transnexus.com/O=OSPServer
++verify error:num=18:self signed certificate
++verify return:1
++depth=0 /CN=osptestserver.transnexus.com/O=OSPServer
++verify return:1
++The certificate request was successful.
++Error Code returned from localcert command : 0
++
+--- osptoolkit-3.4.2.orig/debian/docs
++++ osptoolkit-3.4.2/debian/docs
+@@ -0,0 +1,3 @@
++LICENSE.txt
++README.txt
++RELNOTES.txt
+--- osptoolkit-3.4.2.orig/debian/libosptk3-dev.install
++++ osptoolkit-3.4.2/debian/libosptk3-dev.install
+@@ -0,0 +1,5 @@
++usr/include/osp/*.h
++usr/lib/libosptk.so
++usr/lib/libosptk.a
++usr/lib/libosptk.la
++usr/lib/pkgconfig/libosptk*.pc
+--- osptoolkit-3.4.2.orig/debian/control
++++ osptoolkit-3.4.2/debian/control
+@@ -0,0 +1,71 @@
++Source: osptoolkit
++Maintainer: TransNexus, Inc. <support@transnexus.com>
++Uploaders: Di-Shi Sun <di-shi@transnexus.com>
++Section: utils
++Priority: optional
++Build-Depends: debhelper (>= 5), libssl-dev, libtool, docbook-to-man
++Standards-Version: 3.7.3
++
++Package: osptoolkit
++Architecture: any
++Priority: optional
++Depends: ${shlibs:Depends}, openssl
++Description: An open source client side development kit for Open Settlement Protocol
++ The Open Settlement Protocol (OSP) standard defined by the European
++ Telecommunications Standards Institute (ETSI TS 101 321) www.etsi.org.
++ .
++ The OSP Toolkit is an open source implementation of the OSP peering protocol
++ and is freely available from www.sourceforge.net. It enables applications for
++ secure multi-lateral peering.
++ .
++ This package contains OSP Toolkit documentation, enroll and test tools.
++ .
++ The enroll program is a utility application for establishing a trusted
++ relationship between an OSP client and OSP servers.
++
++Package: libosptk3
++Architecture: any
++Section: libs
++Depends: ${shlibs:Depends}
++Description: OSP Toolkit shared library
++ The Open Settlement Protocol (OSP) standard defined by the European
++ Telecommunications Standards Institute (ETSI TS 101 321) www.etsi.org.
++ .
++ The OSP Toolkit is an open source implementation of the OSP peering protocol
++ and is freely available from www.sourceforge.net. It enables applications for
++ secure multi-lateral peering.
++ .
++ libosptk run-time shared library needed by OSP client end applications that
++ use OSP Toolkit.
++
++Package: libosptk3-dev
++Architecture: any
++Section: libdevel
++Priority: optional
++Depends: libosptk3 (= ${binary:Version})
++Description: OSP Toolkit development library and header files
++ The Open Settlement Protocol (OSP) standard defined by the European
++ Telecommunications Standards Institute (ETSI TS 101 321) www.etsi.org.
++ .
++ The OSP Toolkit is an open source implementation of the OSP peering protocol
++ and is freely available from www.sourceforge.net. It enables applications for
++ secure multi-lateral peering.
++ .
++ libosptk development library and header files for building OSP client end
++ applications with OSP Toolkit.
++
++Package: libosptk3-dbg
++Architecture: any
++Section: libdevel
++Priority: extra
++Depends: libosptk3 (= ${binary:Version})
++Description: OSP Toolkit symbol tables
++ The Open Settlement Protocol (OSP) standard defined by the European
++ Telecommunications Standards Institute (ETSI TS 101 321) www.etsi.org.
++ .
++ The OSP Toolkit is an open source implementation of the OSP peering protocol
++ and is freely available from www.sourceforge.net. It enables applications for
++ secure multi-lateral peering.
++ .
++ libosptk debug symbol tables for debugging OSP client end applications that
++ use OSP Toolkit.
+--- osptoolkit-3.4.2.orig/debian/osptoolkit.dirs
++++ osptoolkit-3.4.2/debian/osptoolkit.dirs
+@@ -0,0 +1,5 @@
++usr/lib/osp
++etc/osp
++usr/bin
++usr/share/man/man1
++usr/share/doc/osptoolkit
+--- osptoolkit-3.4.2.orig/debian/osptest.sgml
++++ osptoolkit-3.4.2/debian/osptest.sgml
+@@ -0,0 +1,108 @@
++<!doctype refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN" [
++
++<!-- Process this file with docbook-to-man to generate an nroff manual
++     page: `docbook-to-man manpage.sgml > manpage.1'.  You may view
++     the manual page with: `docbook-to-man manpage.sgml | nroff -man |
++     less'.  A typical entry in a Makefile or Makefile.am is:
++
++manpage.1: manpage.sgml
++	docbook-to-man $< > $@
++
++	The docbook-to-man binary is found in the docbook-to-man package.
++	Please remember that if you create the nroff version in one of the
++	debian/rules file targets (such as build), you will need to include
++	docbook-to-man in your Build-Depends control field.
++
++  -->
++
++  <!-- Fill in your name for FIRSTNAME and SURNAME. -->
++  <!ENTITY dhfirstname "<firstname>Di-Shi</firstname>">
++  <!ENTITY dhsurname   "<surname>Sun</surname>">
++  <!-- Please adjust the date whenever revising the manpage. -->
++  <!ENTITY dhdate      "<date>January  9, 2008</date>">
++  <!-- SECTION should be 1-8, maybe w/ subsection other parameters are
++       allowed: see man(7), man(1). -->
++  <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
++  <!ENTITY dhemail     "<email>support@transnexus.com</email>">
++  <!ENTITY dhusername  "TransNexus, Inc.">
++  <!ENTITY dhucpackage "<refentrytitle>OSPTEST</refentrytitle>">
++  <!ENTITY dhpackage   "osptest">
++
++  <!ENTITY debian      "<productname>Debian</productname>">
++  <!ENTITY gnu         "<acronym>GNU</acronym>">
++  <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
++]>
++
++<refentry>
++  <refentryinfo>
++    <address>
++      &dhemail;
++    </address>
++    <author>
++      &dhfirstname;
++      &dhsurname;
++    </author>
++    <copyright>
++      <year>2003</year>
++      <holder>&dhusername;</holder>
++    </copyright>
++    &dhdate;
++  </refentryinfo>
++  <refmeta>
++    &dhucpackage;
++    &dhsection;
++  </refmeta>
++  <refnamediv>
++    <refname>&dhpackage;</refname>
++    <refpurpose> OSP test application</refpurpose>
++  </refnamediv>
++  <refsynopsisdiv>
++    <cmdsynopsis>
++      <command>&dhpackage;</command>
++    </cmdsynopsis>
++  </refsynopsisdiv>
++  <refsect1>
++    <title>DESCRIPTION</title>
++    <para>This manual page documents briefly the
++      <command>&dhpackage;</command> command.</para>
++    <para>This manual page was written for the &debian; distribution
++      because the original program does not have a manual page.</para>
++    <para><command>&dhpackage;</command> is a program that is use to test 
++      the OSP packages installed on Debian.</para>
++  </refsect1>
++  <refsect1>
++    <title>OPTIONS</title>
++    <para>None</para>
++  </refsect1>
++  <refsect1>
++    <title>SEE ALSO</title>
++    <para>ospenroll(1)</para>
++  </refsect1>
++  <refsect1>
++    <title>AUTHOR</title>
++    <para>This manual page was written by &dhusername; &dhemail; for
++      the &debian; system (but may be used by others).  Permission is
++      granted to copy, distribute and/or modify this document under
++      the terms of the &gnu; General Public License, Version 2 any later 
++      version published by the Free Software Foundation.</para>
++	<para>On Debian systems, the complete text of the GNU General Public
++	  License can be found in /usr/share/common-licenses/GPL.</para>
++  </refsect1>
++</refentry>
++
++<!-- Keep this comment at the end of the file
++Local variables:
++mode: sgml
++sgml-omittag:t
++sgml-shorttag:t
++sgml-minimize-attributes:nil
++sgml-always-quote-attributes:t
++sgml-indent-step:2
++sgml-indent-data:t
++sgml-parent-document:nil
++sgml-default-dtd-file:nil
++sgml-exposed-tags:nil
++sgml-local-catalogs:nil
++sgml-local-ecat-files:nil
++End:
++-->
+--- osptoolkit-3.4.2.orig/debian/libosptk3-dev.dirs
++++ osptoolkit-3.4.2/debian/libosptk3-dev.dirs
+@@ -0,0 +1,3 @@
++usr/lib
++usr/include/osp
++usr/lib/pkgconfig
+--- osptoolkit-3.4.2.orig/debian/changelog
++++ osptoolkit-3.4.2/debian/changelog
+@@ -0,0 +1,9 @@
++osptoolkit (3.4.2-1) unstable; urgency=low
++
++  * Initial Release (Closes: Bug#468110).
++  * Added a new Makefile under the main directory to generate the packages.
++  * Modified bad OSPC_OSNULL statements to avoid compile warning messages.
++  * Modified char to const char to avoid compile warning messages.
++
++ -- TransNexus, Inc. <support@transnexus.com>  Sun, 30 Dec 2007 20:37:26 -0500
++
+--- osptoolkit-3.4.2.orig/debian/osptoolkit.doc-base
++++ osptoolkit-3.4.2/debian/osptoolkit.doc-base
+@@ -0,0 +1,9 @@
++Document: osptoolkit
++Title: Debian osptoolkit Manual
++Author: Di-Shi Sun
++Abstract: This manual describes what osptoolkit is and how it can be used on Debian systems.
++Section: utils
++
++Format: text
++Files: /usr/share/doc/osptoolkit/osptoolkit.txt.gz
++
+--- osptoolkit-3.4.2.orig/debian/osptoolkit.install
++++ osptoolkit-3.4.2/debian/osptoolkit.install
+@@ -0,0 +1,3 @@
++usr/lib/osp/*
++etc/osp/*
++usr/bin/osp*
+--- osptoolkit-3.4.2.orig/debian/ospenroll.sgml
++++ osptoolkit-3.4.2/debian/ospenroll.sgml
+@@ -0,0 +1,120 @@
++<!doctype refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN" [
++
++<!-- Process this file with docbook-to-man to generate an nroff manual
++     page: `docbook-to-man manpage.sgml > manpage.1'.  You may view
++     the manual page with: `docbook-to-man manpage.sgml | nroff -man |
++     less'.  A typical entry in a Makefile or Makefile.am is:
++
++manpage.1: manpage.sgml
++	docbook-to-man $< > $@
++
++	The docbook-to-man binary is found in the docbook-to-man package.
++	Please remember that if you create the nroff version in one of the
++	debian/rules file targets (such as build), you will need to include
++	docbook-to-man in your Build-Depends control field.
++
++  -->
++
++  <!-- Fill in your name for FIRSTNAME and SURNAME. -->
++  <!ENTITY dhfirstname "<firstname>Di-Shi</firstname>">
++  <!ENTITY dhsurname   "<surname>Sun</surname>">
++  <!-- Please adjust the date whenever revising the manpage. -->
++  <!ENTITY dhdate      "<date>January  9, 2008</date>">
++  <!-- SECTION should be 1-8, maybe w/ subsection other parameters are
++       allowed: see man(7), man(1). -->
++  <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
++  <!ENTITY dhemail     "<email>support@transnexus.com</email>">
++  <!ENTITY dhusername  "TransNexus, Inc.">
++  <!ENTITY dhucpackage "<refentrytitle>OSPENROLL</refentrytitle>">
++  <!ENTITY dhpackage   "ospenroll">
++
++  <!ENTITY debian      "<productname>Debian</productname>">
++  <!ENTITY gnu         "<acronym>GNU</acronym>">
++  <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
++]>
++
++<refentry>
++  <refentryinfo>
++    <address>
++      &dhemail;
++    </address>
++    <author>
++      &dhfirstname;
++      &dhsurname;
++    </author>
++    <copyright>
++      <year>2003</year>
++      <holder>&dhusername;</holder>
++    </copyright>
++    &dhdate;
++  </refentryinfo>
++  <refmeta>
++    &dhucpackage;
++    &dhsection;
++  </refmeta>
++  <refnamediv>
++    <refname>&dhpackage;</refname>
++    <refpurpose> OSP enroll script</refpurpose>
++  </refnamediv>
++  <refsynopsisdiv>
++    <cmdsynopsis>
++      <command>&dhpackage;</command>
++      <command> ospserver...</command>
++    </cmdsynopsis>
++  </refsynopsisdiv>
++  <refsect1>
++    <title>DESCRIPTION</title>
++    <para>This manual page documents briefly the
++      <command>&dhpackage;</command> command.</para>
++    <para>This manual page was written for the &debian; distribution
++      because the original program does not have a manual page.</para>
++    <para><command>&dhpackage;</command> is a program that enables the OSP 
++      client device to generate its own public-private key pair, get the public 
++      key from an OSP peering server, send a certificate request to a peering 
++      server and receive the resulting signed certificate from the peering 
++      server.</para>
++  </refsect1>
++  <refsect1>
++    <title>OPTIONS</title>
++    <variablelist>
++      <varlistentry>
++        <term><option>ospserver</option>
++        </term>
++        <listitem>
++          <para>OSP server IP or domain name.</para>
++        </listitem>
++      </varlistentry>
++    </variablelist>
++  </refsect1>
++  <refsect1>
++    <title>SEE ALSO</title>
++    <para>osptest(1)</para>
++  </refsect1>
++  <refsect1>
++    <title>AUTHOR</title>
++    <para>This manual page was written by &dhusername; &dhemail; for
++      the &debian; system (but may be used by others).  Permission is
++      granted to copy, distribute and/or modify this document under
++      the terms of the &gnu; General Public License, Version 2 any later 
++      version published by the Free Software Foundation.</para>
++	<para>On Debian systems, the complete text of the GNU General Public
++	  License can be found in /usr/share/common-licenses/GPL.</para>
++  </refsect1>
++</refentry>
++
++<!-- Keep this comment at the end of the file
++Local variables:
++mode: sgml
++sgml-omittag:t
++sgml-shorttag:t
++sgml-minimize-attributes:nil
++sgml-always-quote-attributes:t
++sgml-indent-step:2
++sgml-indent-data:t
++sgml-parent-document:nil
++sgml-default-dtd-file:nil
++sgml-exposed-tags:nil
++sgml-local-catalogs:nil
++sgml-local-ecat-files:nil
++End:
++-->
+--- osptoolkit-3.4.2.orig/debian/osptoolkit.links
++++ osptoolkit-3.4.2/debian/osptoolkit.links
+@@ -0,0 +1,2 @@
++usr/lib/osp/enroll.sh	usr/bin/ospenroll
++usr/lib/osp/test_app	usr/bin/osptest
+--- osptoolkit-3.4.2.orig/Makefile
++++ osptoolkit-3.4.2/Makefile
+@@ -0,0 +1,163 @@
++#
++# OSP Toolkit Makefile for Debian
++#
++
++# Default install directory
++INSTALL_PATH = $(DESTDIR)/usr
++CONFIG_PATH = $(DESTDIR)/etc
++PC_PATH = $(DESTDIR)/usr/lib/pkgconfig
++
++# Compile tools
++CC = gcc
++D2M = docbook-to-man
++
++# Compile flags
++DEFFLAGS = -DOSP_ALLOW_DUP_TXN -DOSP_NO_DELETE_CHECK -DOSP_SDK -D_REENTRANT \
++	   -D_POSIX_THREADS -DOPENSSL_NO_KRB5 -D_GNU_SOURCE
++INCFLAGS = -I$(INCDIR) -I$(ENRDIR) -I$(EXPDIR)
++# DEBFLAGS = -DOSPC_DEBUG=1
++GFLAGS = -g -Wall
++CFLAGS = $(DEFFLAGS) $(INCFLAGS) $(DEBFLAGS) $(GFLAGS) $(ADDFLAGS)
++colon = :
++period = .
++LTFLAGS = -rpath /usr/lib -version-number $(subst $(period),$(colon),$(VERSION))
++
++# General libries
++GENLIBS = -lm -lpthread
++
++# SSL library selection for OpenSSL
++SSL_OBJS = ospopenssl
++SSLLIBS = -lssl -lcrypto
++
++# OSP Toolkit directories
++INCDIR = include
++LIBDIR = lib
++SRCDIR = src
++ENRDIR = enroll
++EXPDIR = test
++BINDIR = bin
++DEBDIR = debian
++
++# OSP Toolkit objects & library
++OSP_OBJS = osppkcs1 osppkcs8 osppkcs7 ospcryptowrap ospasn1ids ospasn1object \
++	   ospx509 ospasn1 ospasn1primitives ospasn1parse ospcrypto osptnlog \
++	   ospsecssl  ospsecurity osplist osphttp ospxml ospmime ospprovider \
++           ospproviderapi ospsocket ospcomm osputils ospmsgque ospmsginfo \
++	   osptransapi osptrans ospinit ospmsgelem ospdest ospusage ospmsgattr \
++	   ospcallid osptoken ospmsgutil ospmsgdesc ospostime ospxmltype \
++	   ospxmlparse ospxmlattr ospxmlutil ospxmlenc ospxmlelem ospusageind \
++           ospstatus ospauthreq ospauthrsp ospauthind ospauthcnf ospreauthreq \
++	   ospreauthrsp ospusagecnf ospb64 ospbfr osptokeninfo  ospfail \
++	   ospaltinfo ospssl  ospstatistics osptnprobe ospaudit osptnaudit \
++	   osptransids ospciscoext ospcapind ospcapcnf \
++           $(SSL_OBJS)
++OSPOBJS = $(addprefix $(SRCDIR)/,$(addsuffix .lo,$(OSP_OBJS)))
++OSP_LIB = libosptk
++OSPLIB = $(addprefix $(LIBDIR)/,$(addsuffix .la,$(OSP_LIB)))
++OSPLIBLT = $(addsuffix .la,$(OSP_LIB))
++OSPSTATIC = $(addsuffix .a,$(OSP_LIB))
++OSPSHARED = $(addsuffix .so.$(VERSION),$(OSP_LIB))
++OSPSLINK = $(addsuffix .so.$(MAJOR),$(OSP_LIB))
++OSPSLIB = $(addsuffix .so,$(OSP_LIB))
++OSP_DOC = osptoolkit.txt
++OSPDOC = $(DEBDIR)/$(OSP_DOC)
++OSP_PC = $(OSP_LIB)$(MAJOR).pc
++OSPPC = $(DEBDIR)/$(OSP_PC)
++
++# OSP Toolkit enroll application
++ENR_OBJS = osptnepinit osptnepenroll osptnep osptneputil
++ENROBJS = $(addprefix $(ENRDIR)/,$(addsuffix .o,$(ENR_OBJS)))
++ENR_EXEC = enroll
++ENREXEC = $(BINDIR)/$(ENR_EXEC)
++ENR_WRAP = enroll.sh
++ENRWRAP = $(BINDIR)/$(ENR_WRAP)
++ENR_CONF = openssl.cnf
++ENRCONF = $(BINDIR)/$(ENR_CONF)
++ENR_SGML = ospenroll.sgml
++ENRSGML = $(DEBDIR)/$(ENR_SGML)
++ENR_MAN = ospenroll.1
++ENRMAN = $(DEBDIR)/$(ENR_MAN)
++
++# OSP Toolkit test application
++EXP_OBJS = nonblocking syncque test_app
++EXPOBJS = $(addprefix $(EXPDIR)/,$(addsuffix .o,$(EXP_OBJS)))
++EXP_EXEC = test_app
++EXPEXEC = $(BINDIR)/$(EXP_EXEC)
++EXP_CONF = test.cfg
++EXPCONF = $(BINDIR)/$(EXP_CONF)
++EXP_SGML = osptest.sgml
++EXPSGML = $(DEBDIR)/$(EXP_SGML)
++EXP_MAN = osptest.1
++EXPMAN = $(DEBDIR)/$(EXP_MAN)
++
++.SUFFIXES: .lo .c 
++
++.c.o:
++	$(CC) $(CFLAGS) -o $(@) -c $(<)
++
++.c.lo:
++	libtool --mode=compile $(CC) $(CFLAGS) -o $(@) -c $(<)
++
++build: $(OSPLIB) $(OSPPC)
++$(OSPLIB): $(OSPOBJS)
++	libtool --mode=link $(CC) $(GFLAGS) $(ADDFLAGS) -o $(@) $(^) \
++		$(LTFLAGS) $(SSLLIBS) $(GENLIBS)
++$(OSPPC): Makefile
++	@ echo 'Building $(OSPPC) ...'
++	@ ( echo 'prefix=$(INSTALL_PATH)'; \
++	echo 'exec_prefix=$${prefix}'; \
++	echo 'libdir=$${exec_prefix}/lib'; \
++	echo 'includedir=$${prefix}/include'; \
++	echo ''; \
++	echo 'Name: OSPToolkit'; \
++	echo 'Description: OSP shared library'; \
++	echo 'Version: '$(VERSION); \
++	echo 'Requires: '; \
++	echo 'Libs: -L$${libdir} -losptk'; \
++	echo 'Libs.private: $(SSLLIBS) $(GENLIBS)'; \
++	echo 'Cflags: -I$${includedir} -I$${includedir}/osp' ) > $(OSPPC)
++
++enroll: $(ENREXEC)
++$(ENREXEC): $(ENROBJS) $(OSPLIB)
++	libtool --mode=link $(CC) -o $(@) $(^)
++
++test: $(EXPEXEC)
++$(EXPEXEC): $(EXPOBJS) $(OSPLIB)
++	libtool --mode=link $(CC) -o $(@) $(^)
++
++manpages: $(ENRMAN) $(EXPMAN)
++$(ENRMAN): $(ENRSGML)
++	$(D2M) $(<) > $(@)
++$(EXPMAN): $(EXPSGML)
++	$(D2M) $(<) > $(@)
++
++install-lib: build
++	libtool --mode=install cp $(OSPLIB) $(INSTALL_PATH)/lib/
++	rm -f $(INSTALL_PATH)/lib/$(OSPLIBLT)
++	rm -f $(INSTALL_PATH)/lib/$(OSPSTATIC)
++	rm -f $(INSTALL_PATH)/lib/$(OSPSLIB)
++
++install-dev: build
++	cp $(INCDIR)/osp/* $(INSTALL_PATH)/include/osp
++	libtool --mode=install cp $(OSPLIB) $(INSTALL_PATH)/lib/
++	rm -f $(INSTALL_PATH)/lib/$(OSPSHARED)
++	rm -f $(INSTALL_PATH)/lib/$(OSPSLINK)
++	cp $(OSPPC) $(PC_PATH)
++	chmod 644 $(PC_PATH)/$(OSP_PC)
++
++install-bin: enroll test manpages
++	libtool --mode=install cp $(ENREXEC) $(INSTALL_PATH)/lib/osp/
++	cp $(ENRWRAP) $(INSTALL_PATH)/lib/osp/
++	cp $(ENRCONF) $(CONFIG_PATH)/osp/
++	cp $(ENRMAN) $(INSTALL_PATH)/share/man/man1/
++	libtool --mode=install cp $(EXPEXEC) $(INSTALL_PATH)/lib/osp/
++	cp $(EXPCONF) $(CONFIG_PATH)/osp/
++	cp $(EXPMAN) $(INSTALL_PATH)/share/man/man1/
++	cp $(OSPDOC) $(INSTALL_PATH)/share/doc/osptoolkit/
++
++clean:
++	libtool --mode=clean rm -f $(OSPLIB) $(OSPOBJS)
++	libtool --mode=clean rm -f $(ENREXEC) $(ENROBJS)
++	libtool --mode=clean rm -f $(EXPEXEC) $(EXPOBJS)
++	rm -f $(ENRMAN) $(EXPMAN) $(OSPPC)
++
