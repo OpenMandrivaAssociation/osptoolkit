@@ -116,3 +116,77 @@ rm -rf %{buildroot}
 %doc bin/enroll.sh bin/test.cfg bin/openssl.cnf bin/.rnd
 %{_bindir}/osp-test_app
 %{_bindir}/osp-enroll
+
+
+%changelog
+* Tue Apr 03 2012 Oden Eriksson <oeriksson@mandriva.com> 4.0.3-1mdv2012.0
++ Revision: 788934
+- 4.0.3
+
+* Fri Oct 22 2010 Lonyai Gergely <aleph@mandriva.org> 3.6.1-1mdv2011.0
++ Revision: 587230
+- 3.6.1
+  The patch is rediffed.
+
+* Fri Apr 16 2010 Funda Wang <fwang@mandriva.org> 3.5.2-2mdv2010.1
++ Revision: 535248
+- rebuild
+
+* Mon Aug 31 2009 Oden Eriksson <oeriksson@mandriva.com> 3.5.2-1mdv2010.0
++ Revision: 422856
+- 3.5.2
+
+* Wed Jul 09 2008 Oden Eriksson <oeriksson@mandriva.com> 3.4.2-1mdv2009.0
++ Revision: 233094
+- 3.4.2
+
+  + Pixel <pixel@mandriva.com>
+    - do not call ldconfig in %%post/%%postun, it is now handled by filetriggers
+
+  + Olivier Blin <blino@mandriva.org>
+    - restore BuildRoot
+
+  + Thierry Vignaud <tv@mandriva.org>
+    - kill re-definition of %%buildroot on Pixel's request
+
+
+* Fri Oct 20 2006 Oden Eriksson <oeriksson@mandriva.com> 3.3.6-3mdv2007.0
++ Revision: 71326
+- fix linkage
+- bunzip patches
+- fix linkage (pthread)
+- Import osptoolkit
+
+* Fri Jun 02 2006 Oden Eriksson <oeriksson@mandriva.com> 3.3.6-2mdv2007.0
+- use a working url for the source location
+
+* Thu Mar 23 2006 Oden Eriksson <oeriksson@mandriva.com> 3.3.6-1mdk
+- 3.3.6
+
+* Fri Feb 10 2006 Oden Eriksson <oeriksson@mandriva.com> 3.3.4-1mdk
+- 3.3.4
+
+* Wed Nov 30 2005 Oden Eriksson <oeriksson@mandriva.com> 3.3.3-3mdk
+- rebuilt against openssl-0.9.8a
+
+* Thu Nov 03 2005 Oden Eriksson <oeriksson@mandriva.com> 3.3.3-2mdk
+- fix compilation (gwenole)
+- fix deps due new libname
+
+* Wed Nov 02 2005 Stefan van der Eijk <stefan@eijk.nu> 3.3.3-1mdk
+- %%mkrel
+- 3.3.3
+
+* Sat Sep 03 2005 Oden Eriksson <oeriksson@mandriva.com> 3.3.1-4mdk
+- rebuild
+- use sane deps names
+
+* Fri May 06 2005 Oden Eriksson <oeriksson@mandriva.com> 3.3.1-3mdk
+- rebuilt with gcc4
+
+* Fri Apr 29 2005 Oden Eriksson <oeriksson@mandriva.com> 3.3.1-2mdk
+- fix deps
+
+* Mon Jan 17 2005 Oden Eriksson <oeriksson@mandrakesoft.com> 3.3.1-1mdk
+- initial Mandrakelinux package
+
