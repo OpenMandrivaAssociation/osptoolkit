@@ -1,2 +1,4 @@
+removed_sources:
+  OSPToolkit-4.0.3.tar.gz: 107f9ed6572a2df1169d578e7fccf69e4d427f16
 sources:
-  "OSPToolkit-4.0.3.tar.gz": 107f9ed6572a2df1169d578e7fccf69e4d427f16
+  OSPToolkit-4.1.5.tar.gz: 03bf9a47a755cee1474d858bc8a62c9b1efffc9e
