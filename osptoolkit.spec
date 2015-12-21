@@ -1,6 +1,7 @@
 %define	major 4
 %define libname %mklibname osptk %{major}
 %define develname %mklibname osptk -d
+%define _disable_lto 1
 
 Summary:	The OSP Toolkit(tm)
 Name:		osptoolkit
