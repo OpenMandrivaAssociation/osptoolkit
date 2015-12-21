@@ -4,8 +4,8 @@
 
 Summary:	The OSP Toolkit(tm)
 Name:		osptoolkit
-Version:	4.1.5
-Release:	10
+Version:	4.10.0
+Release:	1
 License:	BSD-like
 Group:		System/Libraries
 URL:		http://sourceforge.net/projects/osp-toolkit
@@ -64,7 +64,7 @@ This package contains various utilities utilizing the libosptk library.
 
 %prep
 
-%setup -q -n TK-4_1_5-20130819
+%setup -q -n TK-4_10_0-20151216
 %patch0 -p1
 
 install -m0644 %{SOURCE1} Makefile
@@ -77,7 +77,8 @@ find -name "Makefile" | xargs perl -pi -e "s|/lib\b|/%{_lib}|g"
 
 %make CC=%{__cc} build VERSION="%{version}" MAJOR="%{major}" ADDFLAGS="%{optflags}" LDFLAGS="%{ldflags}"
 %make CC=%{__cc} enroll VERSION="%{version}" MAJOR="%{major}" ADDFLAGS="%{optflags}" LDFLAGS="%{ldflags}"
-%make CC=%{__cc} test VERSION="%{version}" MAJOR="%{major}" ADDFLAGS="%{optflags}" LDFLAGS="%{ldflags}"
+%make CC=%{__cc} test VERSION="%{version}" MAJOR="%{major}" ADDFLAGS="%{optflags} -Dtrue=1 -Dfalse=0" LDFLAGS="%{ldflags}"
+
 
 %install
 install -d %{buildroot}%{_bindir}
