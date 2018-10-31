@@ -6,7 +6,7 @@
 Summary:	The OSP Toolkit(tm)
 Name:		osptoolkit
 Version:	4.10.0
-Release:	1
+Release:	2
 License:	BSD-like
 Group:		System/Libraries
 URL:		http://sourceforge.net/projects/osp-toolkit
