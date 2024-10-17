@@ -9,7 +9,7 @@ Version:	4.10.0
 Release:	2
 License:	BSD-like
 Group:		System/Libraries
-URL:		http://sourceforge.net/projects/osp-toolkit
+URL:		https://sourceforge.net/projects/osp-toolkit
 Source0:	http://dfn.dl.sourceforge.net/sourceforge/osp-toolkit/OSPToolkit-%{version}.tar.gz
 Source1:	Makefile
 Patch0:		osptoolkit_3.4.2-1.diff
