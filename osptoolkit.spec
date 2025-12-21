@@ -13,6 +13,7 @@ URL:		https://sourceforge.net/projects/osp-toolkit
 Source0:	http://dfn.dl.sourceforge.net/sourceforge/osp-toolkit/OSPToolkit-%{version}.tar.gz
 Source1:	Makefile
 Patch0:		osptoolkit_3.4.2-1.diff
+BuildRequires:	make
 BuildRequires:	openssl-devel
 BuildRequires:	libtool
 
